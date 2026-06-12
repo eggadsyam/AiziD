@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Aizi - Masuk ke konsol aggregator penyimpanan awan Anda.">
+    <title>Aizi — Masuk Konsol</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" href="/static/img/logo.svg">
+    <script>
+        // Terapkan tema sebelum halaman selesai dimuat untuk mencegah kedipan/flashing
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <style>
+        .login-layout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100vw;
+            height: 100vh;
+            background-color: var(--bg-primary);
+        }
+
+        .login-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-xl);
+            padding: 40px;
+            width: 420px;
+            box-shadow: var(--shadow-lg);
+            animation: fadeSlideUp 0.5s var(--transition-slow) both;
+        }
+
+        .login-card-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .login-brand .brand-logo {
+            box-shadow: 0 4px 12px rgba(15, 98, 254, 0.2);
+        }
+
+        .login-brand h2 {
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .login-card-header p {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.88rem;
+            outline: none;
+            transition: all var(--transition-fast);
+        }
+
+        .form-input:focus {
+            background-color: var(--bg-secondary);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.1);
+        }
+
+        .login-error-message {
+            background-color: #fff0f1;
+            color: var(--accent-orange);
+            border: 1px solid rgba(250, 77, 86, 0.15);
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 18px;
+            text-align: center;
+        }
+
+        .login-success-message {
+            background-color: var(--accent-green-light);
+            color: var(--accent-green);
+            border: 1px solid rgba(36, 161, 72, 0.15);
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 18px;
+            text-align: center;
+        }
+
+        .login-toggle-text {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        .login-toggle-link {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .login-toggle-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-layout">
+        
+        <!-- Theme Toggle (Top Right) -->
+        <button class="btn-theme-toggle" id="btn-theme-toggle" aria-label="Toggle Theme" title="Toggle Theme" style="position: absolute; top: 20px; right: 20px; background: var(--bg-secondary); border: 1px solid var(--border-medium); border-radius: 12px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem; color: var(--text-secondary); transition: all var(--transition-fast); z-index: 10;">🌙</button>
+
+        <!-- ===== LOGIN CARD ===== -->
+        <div class="login-card">
+            
+            <div class="login-card-header">
+                <div class="login-brand">
+                    <img src="/static/img/logo.svg" alt="Aizi Logo" class="brand-logo-img">
+                    <h2>Aizi</h2>
+                </div>
+                <p id="card-subtitle">Masuk untuk mengelola penyimpanan awan terpadu</p>
+            </div>
+
+            <!-- Error/Success Flash Messages -->
+            {% if error %}
+            <div class="login-error-message">
+                ⚠️ {{ error }}
+            </div>
+            {% endif %}
+            
+            {% if message %}
+            <div class="login-success-message">
+                ✅ {{ message }}
+            </div>
+            {% endif %}
+
+            <!-- Form Masuk (Login) -->
+            <form action="/login" method="POST" class="login-form" id="form-login">
+                <div class="form-group">
+                    <label for="login-username">Username</label>
+                    <input type="text" id="login-username" name="username" class="form-input" required placeholder="Masukkan username Anda">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" name="password" class="form-input" required placeholder="Masukkan password Anda">
+                </div>
+                <button type="submit" class="btn btn-primary" style="justify-content: center; padding: 12px;">
+                    Masuk ke Dashboard
+                </button>
+            </form>
+
+            <!-- Form Registrasi (Register) - Sembunyi secara default -->
+            <form action="/register" method="POST" class="login-form" id="form-register" style="display: none;">
+                <div class="form-group">
+                    <label for="register-username">Username Baru</label>
+                    <input type="text" id="register-username" name="username" class="form-input" required placeholder="Pilih username unik">
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password</label>
+                    <input type="password" id="register-password" name="password" class="form-input" required placeholder="Masukkan password minimal 4 karakter">
+                </div>
+                <div class="form-group">
+                    <label for="register-confirm">Konfirmasi Password</label>
+                    <input type="password" id="register-confirm" name="confirm_password" class="form-input" required placeholder="Ketik ulang password Anda">
+                </div>
+                <button type="submit" class="btn btn-primary" style="justify-content: center; padding: 12px; background: var(--accent-green); box-shadow: 0 4px 10px rgba(36, 161, 72, 0.15);">
+                    Daftar Akun Baru
+                </button>
+            </form>
+
+            <!-- Toggle Link -->
+            <div class="login-toggle-text">
+                <span id="toggle-label">Belum memiliki akun?</span>
+                <a class="login-toggle-link" id="toggle-form-btn">Daftar Sekarang</a>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const formLogin = document.getElementById('form-login');
+        const formRegister = document.getElementById('form-register');
+        const btnToggle = document.getElementById('toggle-form-btn');
+        const labelToggle = document.getElementById('toggle-label');
+        const cardSubtitle = document.getElementById('card-subtitle');
+
+        btnToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            // Clear any old error or success alerts when switching forms
+            const errorAlert = document.querySelector('.login-error-message');
+            const successAlert = document.querySelector('.login-success-message');
+            if (errorAlert) errorAlert.style.display = 'none';
+            if (successAlert) successAlert.style.display = 'none';
+
+            if (formLogin.style.display !== 'none') {
+                // Tampilkan Register
+                formLogin.style.display = 'none';
+                formRegister.style.display = 'flex';
+                cardSubtitle.textContent = 'Daftarkan akun konsol lokal baru Anda';
+                labelToggle.textContent = 'Sudah memiliki akun?';
+                btnToggle.textContent = 'Masuk ke Konsol';
+            } else {
+                // Tampilkan Login
+                formRegister.style.display = 'none';
+                formLogin.style.display = 'flex';
+                cardSubtitle.textContent = 'Masuk untuk mengelola penyimpanan awan terpadu';
+                labelToggle.textContent = 'Belum memiliki akun?';
+                btnToggle.textContent = 'Daftar Sekarang';
+            }
+        });
+
+        // Set initial form state if show_register template variable is true
+        const showRegisterOnLoad = "{{ show_register_js }}" === "true";
+        if (showRegisterOnLoad) {
+            formLogin.style.display = 'none';
+            formRegister.style.display = 'flex';
+            cardSubtitle.textContent = 'Daftarkan akun konsol lokal baru Anda';
+            labelToggle.textContent = 'Sudah memiliki akun?';
+            btnToggle.textContent = 'Masuk ke Konsol';
+        }
+
+        // Theme toggler logic
+        const btnThemeToggle = document.getElementById('btn-theme-toggle');
+        const updateIcon = (theme) => {
+            btnThemeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+        };
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        updateIcon(currentTheme);
+
+        btnThemeToggle.addEventListener('click', () => {
+            const activeTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = activeTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateIcon(newTheme);
+        });
+    </script>
+</body>
+</html>

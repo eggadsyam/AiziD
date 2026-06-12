@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Aizi - Gabungkan penyimpanan dari beberapa akun Google Drive menjadi satu tampilan konsol terpadu.">
+    <title>AiziD — Drive Aggregator</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" href="/static/img/logo.svg">
+    <script>
+        // Terapkan tema & tab aktif sebelum halaman selesai dimuat untuk mencegah kedipan/flashing
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        const savedTab = localStorage.getItem('activeTab') || 'explorer';
+        document.documentElement.setAttribute('data-active-tab', savedTab);
+    </script>
+</head>
+
+<body>
+
+    <div class="dashboard-layout">
+
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Brand -->
+            <div class="sidebar-brand">
+                <img src="/static/img/logo.svg" alt="Aizi Logo" class="brand-logo-img">
+                <div class="brand-text">AiziD</div>
+            </div>
+
+            <!-- Connected User Profile -->
+            <div class="user-profile-section" id="sidebar-profile">
+                <div class="user-avatar" id="sidebar-avatar">☁️</div>
+                <div class="user-email-info">
+                    <span class="user-email" id="sidebar-email">Memuat akun...</span>
+                </div>
+            </div>
+
+            <!-- Sidebar Navigation Menu -->
+            <nav class="sidebar-menu">
+                <button class="sidebar-item active" data-tab="explorer">
+                    <span class="menu-icon">📁</span>
+                    <span class="menu-text">All Files</span>
+                </button>
+                <button class="sidebar-item" data-tab="quota">
+                    <span class="menu-icon">📊</span>
+                    <span class="menu-text">Quota Tracker</span>
+                </button>
+                <button class="sidebar-item" data-tab="shared">
+                    <span class="menu-icon">👥</span>
+                    <span class="menu-text">Shared With Me</span>
+                </button>
+                <button class="sidebar-item" data-tab="starred">
+                    <span class="menu-icon">⭐</span>
+                    <span class="menu-text">Starred</span>
+                </button>
+
+                <div class="sidebar-divider"></div>
+
+                <button class="sidebar-item" data-tab="settings" style="display: none;">
+                    <span class="menu-icon">⚙️</span>
+                    <span class="menu-text">Setting</span>
+                </button>
+            </nav>
+
+            <!-- Sidebar Storage Category Overview Widget -->
+            <div class="sidebar-footer">
+                <div class="storage-breakdown-box">
+                    <div class="breakdown-item">
+                        <div class="breakdown-label">
+                            <span class="dot-indicator green"></span>
+                            <span>Photo</span>
+                        </div>
+                        <span class="breakdown-value" id="sidebar-quota-photo">0 B</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-label">
+                            <span class="dot-indicator yellow"></span>
+                            <span>Video</span>
+                        </div>
+                        <span class="breakdown-value" id="sidebar-quota-video">0 B</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-label">
+                            <span class="dot-indicator blue"></span>
+                            <span>Document</span>
+                        </div>
+                        <span class="breakdown-value" id="sidebar-quota-document">0 B</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-label">
+                            <span class="dot-indicator orange"></span>
+                            <span>Free Storage</span>
+                        </div>
+                        <span class="breakdown-value" id="sidebar-quota-free">0 B</span>
+                    </div>
+                </div>
+
+                <!-- Combined Progress Indicator -->
+                <div class="storage-progress-widget">
+                    <div class="storage-mini-bar-container">
+                        <div class="storage-mini-bar-fill" id="sidebar-storage-fill" style="width: 0%;"></div>
+                    </div>
+                    <div class="storage-mini-text" id="sidebar-storage-text">Memuat kuota...</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <main class="main-content">
+
+            <!-- ===== HEADER ===== -->
+            <header class="main-header">
+                <div class="header-left">
+                    <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle Sidebar">☰</button>
+                    <!-- Search Console Bar -->
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="search-input" placeholder="Search Folder, Document, Etc">
+                        <span class="filter-slider-icon" title="Filter Options">🎛️</span>
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <button class="btn-theme-toggle" id="btn-theme-toggle" aria-label="Toggle Theme"
+                        title="Toggle Theme"
+                        style="background: none; border: 1px solid var(--border-medium); border-radius: 12px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem; color: var(--text-secondary); transition: all var(--transition-fast);">🌙</button>
+                    <div class="notification-container">
+                        <button class="btn-notification" id="btn-notification" aria-label="Notifications" title="Notifications">
+                            🔔
+                            <span class="notification-badge" id="notification-badge" style="display: none;">0</span>
+                        </button>
+                        <div class="notification-dropdown" id="notification-dropdown">
+                            <div class="notification-header">
+                                <h4>Aktivitas Upload</h4>
+                                <button class="btn-clear-notifications" id="btn-clear-notifications">Hapus Semua</button>
+                            </div>
+                            <div class="notification-list" id="notification-list">
+                                <div class="notification-empty">
+                                    <div class="notification-empty-icon">📭</div>
+                                    <div class="notification-empty-text">Belum ada riwayat upload.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="user-badge"
+                        style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); background: var(--bg-primary); padding: 6px 14px; border-radius: var(--radius-pill); border: 1px solid var(--border-medium); box-shadow: var(--shadow-sm);">
+                        <span class="invite-icon">👤</span>
+                        <span>{{ session.get('username') }}</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ===== CONTENT VIEWS ===== -->
+            <div class="view-container">
+
+                <!-- 1. VIEW EXPLORER (ALL FILES) -->
+                <section id="view-explorer" class="view-panel active">
+                    <!-- Top Actions Bar -->
+                    <div class="explorer-view-header">
+                        <h2>All Files</h2>
+                        <div class="action-buttons-group">
+                            <button class="btn btn-ghost" id="btn-upload-file-action">
+                                <span>📤</span> Upload
+                            </button>
+                            <button class="btn btn-ghost" id="btn-new-folder-action">
+                                <span>📁</span> New Folder
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Folders Shortcut Bar -->
+                    <div class="folders-section">
+                        <div class="folders-shortcut-row" id="folders-shortcut-row">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Filter Toolbar -->
+                    <div class="explorer-toolbar">
+                        <div class="toolbar-left">
+                            <button class="btn-filter-pill active" id="btn-filter-recents">
+                                <span class="pill-icon">📅</span> Recents
+                            </button>
+                            <button class="btn-filter-pill" id="btn-filter-starred">
+                                <span class="pill-icon">⭐</span> Starred
+                            </button>
+                        </div>
+
+                        <div class="toolbar-right">
+                            <!-- Filter Account (Custom dropdown inside light-theme style) -->
+                            <div class="filter-box">
+                                <select id="filter-account" class="theme-select">
+                                    <option value="all">Semua Akun</option>
+                                </select>
+                            </div>
+                            <!-- Sort Options -->
+                            <div class="sort-box">
+                                <select id="sort-files" class="theme-select">
+                                    <option value="name-asc">Nama (A-Z)</option>
+                                    <option value="name-desc">Nama (Z-A)</option>
+                                    <option value="size-desc">Ukuran (Terbesar)</option>
+                                    <option value="size-asc">Ukuran (Terkecil)</option>
+                                </select>
+                            </div>
+                            <!-- Grid / List Switchers -->
+                            <div class="view-toggles">
+                                <button class="btn-toggle" id="btn-view-grid" title="Grid View">⚏</button>
+                                <button class="btn-toggle active" id="btn-view-list" title="List View">☰</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Breadcrumbs -->
+                    <div class="explorer-breadcrumbs">
+                        <div class="breadcrumbs" id="breadcrumbs"></div>
+                    </div>
+
+                    <!-- Upload Progress -->
+                    <div class="upload-progress" id="upload-progress">
+                        <div class="upload-progress-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <div class="upload-progress-text" id="upload-progress-text" style="font-size:0.78rem; font-weight:600; color:var(--text-secondary);">Mengupload...</div>
+                            <div class="upload-progress-actions" style="display:flex; gap:8px;">
+                                <button class="btn btn-ghost btn-sm" id="btn-upload-pause" style="padding: 2px 8px; font-size: 0.7rem; display: flex; align-items: center; gap: 4px;">
+                                    <span class="icon">⏸️</span> Pause
+                                </button>
+                                <button class="btn btn-danger btn-sm" id="btn-upload-cancel" style="padding: 2px 8px; font-size: 0.7rem; display: flex; align-items: center; gap: 4px;">
+                                    <span class="icon">✕</span> Cancel
+                                </button>
+                            </div>
+                        </div>
+                        <div class="upload-progress-bar" style="margin-bottom:0;">
+                            <div class="upload-progress-fill" id="upload-progress-fill"></div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden Input File -->
+                    <input type="file" id="file-input" multiple style="display:none">
+
+
+
+                    <!-- Files Table Layout Wrapper -->
+                    <div class="files-table-container">
+                        <!-- Table Header Row -->
+                        <div class="files-table-header">
+                            <div class="col-check"><input type="checkbox" id="header-select-all"
+                                    aria-label="Select all files"></div>
+                            <div class="col-name">Name</div>
+                            <div class="col-modified">Last Modified</div>
+                            <div class="col-size">Size</div>
+                            <div class="col-access">Access</div>
+                            <div class="col-actions-header">Action</div>
+                        </div>
+
+                        <!-- Files List Container (Toggled between list/grid classes in main.js) -->
+                        <div class="file-list" id="file-list">
+                            <div class="loading-container">
+                                <div class="loading-spinner"></div>
+                                <span>Memuat file...</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. VIEW QUOTA (QUOTA TRACKER) -->
+                <section id="view-quota" class="view-panel">
+                    <div class="quota-view-header">
+                        <div class="header-titles">
+                            <h2>Quota Tracker</h2>
+                        </div>
+                        <div class="action-buttons-group">
+                            <button class="btn btn-ghost" id="btn-refresh-quota">
+                                <span>🔄</span> Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Stats Grid (4 Cards Row) -->
+                    <div class="quota-stats-grid">
+                        <div class="quota-stat-card">
+                            <span class="quota-stat-label">Total Storage</span>
+                            <h3 class="quota-stat-value" id="stat-total">0.00 GB</h3>
+                        </div>
+                        <div class="quota-stat-card">
+                            <span class="quota-stat-label">Used Storage</span>
+                            <h3 class="quota-stat-value" id="stat-used">0.00 GB</h3>
+                        </div>
+                        <div class="quota-stat-card">
+                            <span class="quota-stat-label">Available</span>
+                            <h3 class="quota-stat-value" id="stat-free">0.00 GB</h3>
+                        </div>
+                        <div class="quota-stat-card">
+                            <span class="quota-stat-label">Accounts</span>
+                            <h3 class="quota-stat-value" id="stat-accounts-count">0</h3>
+                        </div>
+                    </div>
+
+                    <!-- Quota Filter Sub-Toolbar -->
+                    <div class="quota-toolbar">
+                        <button class="btn-quota-pill active" id="btn-quota-all-providers">All Providers</button>
+                        <button class="btn-quota-pill" id="btn-quota-all-accounts">All Accounts</button>
+                        <button class="btn-quota-pill" id="btn-quota-most-available">Most available</button>
+                    </div>
+
+                    <!-- Connected Accounts Storage Grid -->
+                    <div class="accounts-grid" id="accounts-grid">
+                        <!-- Populated dynamically via JS -->
+                        <a href="/add_account" class="account-card account-card-add">
+                            <span class="add-icon">＋</span>
+                            <span>Hubungkan Akun Google Drive Baru</span>
+                        </a>
+                    </div>
+
+                    <!-- Duplicates Finder Widget Card -->
+                    <div class="duplicates-card">
+                        <div class="duplicates-title-section">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="icon" style="font-size: 1.15rem;">👯</span>
+                                <h3
+                                    style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">
+                                    Deteksi File Duplikat</h3>
+                            </div>
+                            <button class="btn btn-primary btn-sm" id="btn-scan-duplicates">
+                                🔍 Scan File Duplikat
+                            </button>
+                        </div>
+                        <div id="duplicates-container">
+                            <div class="empty-state"
+                                style="padding: 32px 20px; border-style: dashed; background: none;">
+                                <div class="empty-state-icon" style="font-size: 2rem; margin-bottom: 8px;">🔍</div>
+                                <p class="empty-state-text" style="font-size: 0.88rem; margin-bottom: 2px;">Belum Ada
+                                    Pemindaian</p>
+                                <p class="empty-state-hint">Klik tombol "Scan File Duplikat" di atas untuk memulai
+                                    pemindaian seluruh akun terhubung.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. VIEW SHARED WITH ME -->
+                <section id="view-shared" class="view-panel">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👥</div>
+                        <p class="empty-state-text">Shared With Me</p>
+                        <p class="empty-state-hint">Tidak ada file yang dibagikan dengan Anda saat ini.</p>
+                    </div>
+                </section>
+
+                <!-- 4. VIEW STARRED -->
+                <section id="view-starred" class="view-panel">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⭐</div>
+                        <p class="empty-state-text">Starred Files</p>
+                        <p class="empty-state-hint">Tandai file penting Anda sebagai Bintang untuk melihatnya di sini.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- 5. VIEW SETTING (SYSTEM & DEBUG) -->
+                <section id="view-settings" class="view-panel">
+                    <div class="glass-card system-card">
+                        <div class="system-section-header">
+                            <h3>Konfigurasi Sistem & Debug</h3>
+                            <p>Uji koneksi Google Drive API dan kelola integrasi data.</p>
+                        </div>
+
+                        <div class="system-section-block">
+                            <h4>Google Cloud API Credentials</h4>
+                            <p>Aplikasi ini membutuhkan file kredensial Google API Console yang valid. Status saat ini:
+                            </p>
+                            <div class="console-box" id="system-credentials-info">
+                                Memeriksa file kredensial...
+                            </div>
+                        </div>
+
+                        <div class="system-section-block">
+                            <h4>Status Layanan & Konektivitas</h4>
+                            <ul class="status-list">
+                                <li>
+                                    <span class="status-label">Koneksi Database:</span>
+                                    <span class="status-badge success">Aktif</span>
+                                </li>
+                                <li>
+                                    <span class="status-label">Google API Console:</span>
+                                    <span class="status-badge info" id="google-api-status">Memeriksa...</span>
+                                </li>
+                                <li>
+                                    <span class="status-label">Sesi Pengguna:</span>
+                                    <span class="status-badge success">Aman (PKCE)</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="system-section-block">
+                            <h4>Panduan Troubleshooting</h4>
+                            <div class="troubleshooting-steps">
+                                <div class="step-item">
+                                    <div class="step-num">1</div>
+                                    <div class="step-desc">
+                                        <h5>Aktifkan Google Drive API</h5>
+                                        <p>Jika kuota terbaca 0 B dan file kosong, pastikan Google Drive API sudah
+                                            diaktifkan di Google Cloud Console untuk project Anda. Kunjungi tautan: <a
+                                                href="https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=371845009482"
+                                                target="_blank" class="system-link">Aktifkan Google Drive API</a>.</p>
+                                    </div>
+                                </div>
+                                <div class="step-item">
+                                    <div class="step-num">2</div>
+                                    <div class="step-desc">
+                                        <h5>Konfigurasi Redirect URI</h5>
+                                        <p>Pastikan Redirect URI berikut telah ditambahkan di OAuth client credentials
+                                            project Anda: <code
+                                                class="code-highlight">http://localhost:5050/oauth2callback</code>.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ===== MODAL ===== -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal" id="modal">
+            <div class="modal-title" id="modal-title"></div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-actions" id="modal-actions"></div>
+        </div>
+    </div>
+
+    <!-- ===== TOAST CONTAINER ===== -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+
+</html>
